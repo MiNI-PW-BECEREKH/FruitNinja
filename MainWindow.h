@@ -37,7 +37,7 @@ public:
 	BOOL AdjustWindow();
 	PCWSTR ClassName() const { return L"Main Window"; }
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
-
+	RECT ProgressBar;
 	UINT BOARDSIZE;
 
 	//constructor
@@ -50,6 +50,8 @@ public:
 	void SetClientSize(SIZE s) { clientSize = s; }
 	SIZE GetClientSize() { return clientSize; }
 
+	void ClearProgressBar();
+	void DrawProgressBar();
 	void OnBoardSizeSmall();
 	void OnBoardSizeMedium();
 	void OnBoardSizeBig();

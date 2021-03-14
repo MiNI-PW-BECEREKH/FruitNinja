@@ -157,6 +157,7 @@ void MainWindow::OnBoardSizeSmall()
     BOARDSIZE = 0;
     //if (LogSettings(L"40015"))
     //    OutputDebugString(L"40015 >> .ini file");
+    OnNewGame();
     SetTimer(Window(), 42, 3000, NULL);
 }
 
@@ -177,6 +178,7 @@ void MainWindow::OnBoardSizeMedium()
     BOARDSIZE = 1;
     //if (LogSettings(L"40013"))
     //    OutputDebugString(L"40013 >> .ini file");
+    OnNewGame();
     SetTimer(Window(), 42, 3000, NULL);
 }
 
@@ -197,6 +199,7 @@ void MainWindow::OnBoardSizeBig()
     BOARDSIZE = 2;
     //if (LogSettings(L"40014"))
     //    OutputDebugString(L"40014 >> .ini file");
+    OnNewGame();
     SetTimer(Window(), 42, 3000, NULL);
 }
 
@@ -229,20 +232,22 @@ void MainWindow::DrawBalls()
             memDC,    // handle to device context
             Ball.region   // handle to region to be painted
         );
-        InvalidateRgn(Window(), Ball.region, TRUE);
         BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
         ReleaseDC(Window(), memDC);
         ReleaseDC(Window(), pDC);
         DeleteObject(memBitmap);
-        //InvalidateRect(Window(),NULL,FALSE);
+        InvalidateRect(Window(),NULL,FALSE);
     }
 }
 
 
 void MainWindow::OnNewGame()
 {
+	//clean the progress bar
+    ClearProgressBar();
     SetTimer(Window(), 69, 5000, 0);
     SetTimer(Window(), 31, 50, 0);
+    SetTimer(Window(), 666, 50, 0);
 }
 
 BOOL MainWindow::LogSettings(LPCWSTR str)
@@ -266,6 +271,37 @@ BOOL MainWindow::LogSettings(LPCWSTR str)
         return FALSE;
     return TRUE;
 }
+
+UINT PROGRESS_COUNTER = 0;
+
+void MainWindow::DrawProgressBar()
+{
+    RECT rc;
+    GetClientRect(Window(), &rc);
+    HDC hdc = GetDC(Window());
+    SelectObject(hdc, CreateSolidBrush(RGB(128, 255, 102)));
+    StretchBlt(hdc, rc.left, rc.bottom - 20, PROGRESS_COUNTER, 20, hdc, ProgressBar.left, ProgressBar.bottom, 0, 0, PATCOPY);
+    if (PROGRESS_COUNTER == rc.right)
+    {
+        KillTimer(Window(), 666);
+        MessageBox(Window(), L"TIME IS UP", L"TIME IS UP", MB_OK);
+    }
+    ReleaseDC(Window(), hdc);
+    PROGRESS_COUNTER += 2;
+}
+
+void MainWindow::ClearProgressBar()
+{
+    RECT rc;
+    GetClientRect(Window(), &rc);
+    HDC hdc = GetDC(Window());
+    StretchBlt(hdc, rc.left, rc.bottom - 20, 0, 20, hdc, ProgressBar.left, ProgressBar.bottom, 0, 0, PATCOPY);
+    ReleaseDC(Window(), hdc);
+    PROGRESS_COUNTER = 0;
+
+}
+
+
 
 
 
@@ -345,6 +381,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     	{
             DrawBalls();
             UpdateWindow(Window());
+    	}
+    	if(wParam == 666)
+    	{
+            DrawProgressBar();
     	}
     }break;
 
