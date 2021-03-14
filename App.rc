@@ -65,8 +65,8 @@ IDR_MENU MENU
 BEGIN
     POPUP "Game"
     BEGIN
-        MENUITEM "Exit",                        ID_GAME_EXIT
         MENUITEM "New Game",                    40016
+        MENUITEM "Exit",                        ID_GAME_EXIT
     END
     POPUP "Board"
     BEGIN

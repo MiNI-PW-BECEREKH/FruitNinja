@@ -4,6 +4,8 @@
 #include <string>
 #include <map>
 
+
+#include "Ball.h"
 #include "GemWindow.h"
 
 #define MAX_GEM_COUNT_Y 12
@@ -28,6 +30,7 @@ public:
 	HCURSOR hCursorSword;
 
 
+	std::vector<Ball> Balls;
 	GemWindow Gems[MAX_GEM_COUNT_X][MAX_GEM_COUNT_Y];
 
 	/**

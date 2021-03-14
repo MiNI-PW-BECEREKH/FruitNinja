@@ -3,6 +3,7 @@
 
 #include <windows.h>
 #include <string>
+#include <vector>
 #include "BaseWindow.h"
 
 
@@ -27,7 +28,7 @@ public:
 	static BOOL Initializing;
 	COLORREF backgroundColor;
 	static BOOL tracking;
-
+	
 	
 	BOOL LogSettings(LPCWSTR);
 	DWORD CheckItem(UINT hItem, HMENU hmenu);
@@ -53,6 +54,11 @@ public:
 	void OnBoardSizeMedium();
 	void OnBoardSizeBig();
 	void OnNewGame();
+
+	void RandomBallSpawn();
+
+	void DrawBalls();
+    
 
 
 };

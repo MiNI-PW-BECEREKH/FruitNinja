@@ -12,12 +12,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	MainWindow win;
 
 	//create main window
-	if (!win.Create(L"FruitNinja",    WS_SYSMENU|WS_OVERLAPPED| WS_DLGFRAME|  WS_VISIBLE , WS_EX_TOPMOST , CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL,
+	if (!win.Create(L"FruitNinja",    WS_SYSMENU|  WS_VISIBLE , WS_EX_TOPMOST , CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL,
 	                LoadMenu(hInstance, MAKEINTRESOURCE(IDR_MENU))))
 	{
 		return 0;
 	}
 
+	//win.ClearBoard();
+	//win.CreateBoard();
+	SendMessage(win.Window(), WM_CREATE, 0, 0);
+	
 	App::GetInstance().hCursorSword = LoadCursor(hInstance, MAKEINTRESOURCE(IDC_CURSOR1));
 	SetCursor(App::GetInstance().hCursorSword);
 	
@@ -45,10 +49,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 			DispatchMessage(&msg);
 
 		}
+		
+
 		//TranslateMessage(&msg);
-		//DispatchMessage(&msg);
-
-
+		//DispatchMessage(&msg)
 	}
 
 	return 0;

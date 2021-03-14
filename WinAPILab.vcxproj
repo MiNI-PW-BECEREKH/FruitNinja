@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Arithmetics.h" />
+    <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseWindow.h" />
     <ClInclude Include="GemWindow.h" />
     <ClInclude Include="MainWindow.h" />
