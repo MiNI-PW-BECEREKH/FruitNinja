@@ -4,6 +4,8 @@
 #include <windows.h>
 #include <string>
 #include <vector>
+
+#include "Ball.h"
 #include "BaseWindow.h"
 
 
@@ -24,11 +26,13 @@ protected:
 public:
 	SIZE cGem;
 	int TIMER_COUNTER;
-
+	BOOL TIME_UP;
 	static BOOL Initializing;
 	COLORREF backgroundColor;
 	static BOOL tracking;
 	
+	std::vector<Ball> Balls ;
+
 	
 	BOOL LogSettings(LPCWSTR);
 	DWORD CheckItem(UINT hItem, HMENU hmenu);
@@ -39,7 +43,8 @@ public:
 	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	RECT ProgressBar;
 	UINT BOARDSIZE;
-
+	
+	
 	//constructor
 	MainWindow()
 	{
@@ -51,7 +56,7 @@ public:
 	SIZE GetClientSize() { return clientSize; }
 
 	void ClearProgressBar();
-	void DrawProgressBar();
+	void DrawProgressBar(HDC *);
 	void OnBoardSizeSmall();
 	void OnBoardSizeMedium();
 	void OnBoardSizeBig();
@@ -59,7 +64,7 @@ public:
 
 	void RandomBallSpawn();
 
-	void DrawBalls();
+	void UpdateBalls();
     
 
 

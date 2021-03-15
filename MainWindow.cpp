@@ -6,6 +6,13 @@
 #include  "Arithmetics.h"
 #include <sstream>
 #include "Ball.h"
+#include <vector>
+#include <map>
+
+#define ACTIVITY_TIMER 42
+#define SPAWN_TIMER 69
+#define PROGRESSBAR_TIMER 666
+#define PHYSICS_TIMER 420
 
 //github.com/sbecerek/BeJeweled
 
@@ -65,11 +72,11 @@ BOOL MainWindow::CreateBoard()
                     HBRUSH hOldBrush = (HBRUSH)SetClassLongPtr(Window(), GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
                     SelectObject(hdc, hbrush);
 
-                Rectangle(hdc, i * 50, j * 50, i * 50 + 50, j * 50 + 50);
-                
-                DeleteObject(hOldBrush);
-                //InvalidateRect(App::GetInstance().Gems[i][j].Window(), NULL, TRUE);
-                ReleaseDC(Window(), hdc);
+	                Rectangle(hdc, i * 50, j * 50, i * 50 + 50, j * 50 + 50);
+	                
+	                DeleteObject(hOldBrush);
+	                //InvalidateRect(App::GetInstance().Gems[i][j].Window(), NULL, TRUE);
+	                ReleaseDC(Window(), hdc);
                 }
 
 
@@ -144,7 +151,7 @@ BOOL MainWindow::AdjustWindow()
 
 void MainWindow::OnBoardSizeSmall()
 {
-    KillTimer(Window(), 42);
+    KillTimer(Window(), ACTIVITY_TIMER);
     cGem.cx = 8; cGem.cy = 6;
     SIZE s; s.cx = 8 * 50; s.cy = 6 * 50 + 20;//last 10 for bar 
     SetClientSize(s);
@@ -158,13 +165,13 @@ void MainWindow::OnBoardSizeSmall()
     //if (LogSettings(L"40015"))
     //    OutputDebugString(L"40015 >> .ini file");
     OnNewGame();
-    SetTimer(Window(), 42, 3000, NULL);
+    SetTimer(Window(), ACTIVITY_TIMER, 3000, NULL);
 }
 
 void MainWindow::OnBoardSizeMedium()
 {
 	//be safe about creating the timer twice
-    KillTimer(Window(), 42);
+    KillTimer(Window(), ACTIVITY_TIMER);
     cGem.cx = 12; cGem.cy = 10;
     SIZE s; s.cx = 12 * 50; s.cy = 10 * 50+20;
     SetClientSize(s);
@@ -179,13 +186,13 @@ void MainWindow::OnBoardSizeMedium()
     //if (LogSettings(L"40013"))
     //    OutputDebugString(L"40013 >> .ini file");
     OnNewGame();
-    SetTimer(Window(), 42, 3000, NULL);
+    SetTimer(Window(), ACTIVITY_TIMER, 3000, NULL);
 }
 
 void MainWindow::OnBoardSizeBig()
 {
     //be safe about creating the timer twice
-    KillTimer(Window(), 42);
+    KillTimer(Window(), ACTIVITY_TIMER);
     cGem.cx = 16; cGem.cy = 12;
     SIZE s; s.cx = 16 * 50; s.cy = 12 * 50+20;
     SetClientSize(s);
@@ -200,54 +207,137 @@ void MainWindow::OnBoardSizeBig()
     //if (LogSettings(L"40014"))
     //    OutputDebugString(L"40014 >> .ini file");
     OnNewGame();
-    SetTimer(Window(), 42, 3000, NULL);
+    SetTimer(Window(), ACTIVITY_TIMER, 3000, NULL);
 }
 
 void MainWindow::RandomBallSpawn()
 {
     srand(time(NULL));
-    POINT p; p.x = rand() % MeasureSize(Window()).cx; p.y = MeasureSize(Window()).cy - 50;
-    INT dx = rand() % 10 > 5 ? 1 : -1;
-    INT dy = rand() % 5 + 1;
+    FLOAT dx = rand() % 10 > 5 ? 1 : -1;
+    POINT p; p.x = rand() % MeasureSize(Window()).cx + rand()%50*dx; p.y = MeasureSize(Window()).cy + 100;
+    FLOAT dy = (rand() % p.x/16 + p.x/32)*-1;
     Ball tmpball =  Ball(50,p,dx,dy);
     tmpball.region = CreateEllipticRgn(tmpball.coordinate.x, tmpball.coordinate.y, tmpball.coordinate.x + tmpball.radius, tmpball.coordinate.y + tmpball.radius);
-    App::GetInstance().Balls.push_back(tmpball);
-	//create below screen later
-    OutputDebugString(L"BALL SPAWNED\n");
+    tmpball.falling = FALSE;
+	if(tmpball.region != NULL)
+	Balls.push_back(tmpball);
+
 }
 
-void MainWindow::DrawBalls()
+void DeleteBall(std::vector<Ball> b,Ball bal)
 {
-	if(GdiFlush())
-    for (auto& Ball : App::GetInstance().Balls)
+    for (int i = 0; i < b.size(); i++)
     {
-        OutputDebugString(L"DRAWING BALL\n");
-        HDC memDC = GetDC(Window());
-        HDC pDC = CreateCompatibleDC(memDC);
-        HBITMAP memBitmap = CreateCompatibleBitmap(pDC,MeasureSize(Window()).cx, MeasureSize(Window()).cx);
-    	
-    	
-        SelectObject(memDC,memBitmap);
-        PaintRgn(
-            memDC,    // handle to device context
-            Ball.region   // handle to region to be painted
-        );
-        BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
-        ReleaseDC(Window(), memDC);
-        ReleaseDC(Window(), pDC);
-        DeleteObject(memBitmap);
-        InvalidateRect(Window(),NULL,FALSE);
+        if (b[i].coordinate.x == bal.coordinate.x
+            && b[i].coordinate.y == bal.coordinate.y
+            && b[i].region == bal.region
+            && b[i].dx == bal.dx
+            && b[i].dy == bal.dy)
+        {
+            b.erase(b.begin() + i, b.end() + i + 2);
+        }
     }
 }
+
+void MainWindow::UpdateBalls()
+{
+
+    HDC pDC = GetDC(Window());
+    HDC memDC = CreateCompatibleDC(pDC);
+    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, MeasureSize(Window()).cx, MeasureSize(Window()).cx);
+    SelectObject(memDC, memBitmap);
+    RECT rc;
+    GetClientRect(Window(), &rc);
+    FillRect(memDC, &rc, (HBRUSH)COLOR_BACKGROUND);
+    for (unsigned int i = 0; i < cGem.cx; i++)
+    {
+        for (unsigned int j = 0; j < cGem.cy; j++)
+        {
+
+            {
+
+                if ((i + j) % 2 == 0)
+                {
+
+                    SelectObject(memDC, GetStockObject(DC_BRUSH));
+                    SetDCBrushColor(memDC, RGB(0, 0, 0));
+                    Rectangle(memDC, i * 50, j * 50, i * 50 + 50, j * 50 + 50);
+
+                }
+                else
+                {
+
+                    SelectObject(memDC, GetStockObject(DC_BRUSH));
+                    SetDCBrushColor(memDC, RGB(255, 255, 255));
+                    Rectangle(memDC, i * 50, j * 50, i * 50 + 50, j * 50 + 50);
+
+                }
+
+
+            }
+        }
+    }
+
+    
+	
+	for(auto&x : Balls)
+	{
+
+		
+        if (x.coordinate.y < -100 )
+        {
+            x.dy *= -1;
+            x.falling = TRUE;
+        }
+
+        if(x.coordinate.y > rc.bottom && x.falling)
+        {
+            //DeleteBall(Balls,x);
+            //DeleteObject(x.region);
+        	//continue;
+        }
+
+        x.dy += 0.98;
+		
+        x.coordinate.x += x.dx;
+        x.coordinate.y += x.dy;
+		
+
+        //Draws once
+        SelectObject(memDC, GetStockObject(DC_BRUSH));
+        SetDCBrushColor(memDC, RGB(55, 55, 55));
+        
+        OffsetRgn(x.region, x.dx, x.dy);
+
+		if(x.region != NULL)
+        FillRgn(
+            memDC,    // handle to device context
+            x.region, CreateSolidBrush(RGB(55, 55, 55)) // handle to region to be painted
+        );
+        //Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
+
+	}
+    DrawProgressBar(&memDC);
+    BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0,SRCCOPY);
+    ReleaseDC(Window(), pDC);
+    DeleteDC(memDC);
+    DeleteObject(memBitmap);
+}
+
+
 
 
 void MainWindow::OnNewGame()
 {
-	//clean the progress bar
+
+	
+    Balls.clear();
+    //clean the progress bar
     ClearProgressBar();
-    SetTimer(Window(), 69, 5000, 0);
-    SetTimer(Window(), 31, 50, 0);
-    SetTimer(Window(), 666, 50, 0);
+	//empty the container
+    SetTimer(Window(), SPAWN_TIMER, 1000, 0);
+    SetTimer(Window(), PROGRESSBAR_TIMER, 50, 0);
+    SetTimer(Window(), PHYSICS_TIMER, 50, 0);
 }
 
 BOOL MainWindow::LogSettings(LPCWSTR str)
@@ -274,30 +364,24 @@ BOOL MainWindow::LogSettings(LPCWSTR str)
 
 UINT PROGRESS_COUNTER = 0;
 
-void MainWindow::DrawProgressBar()
+void MainWindow::DrawProgressBar(HDC *memDC)
 {
     RECT rc;
     GetClientRect(Window(), &rc);
-    HDC hdc = GetDC(Window());
-    SelectObject(hdc, CreateSolidBrush(RGB(128, 255, 102)));
-    StretchBlt(hdc, rc.left, rc.bottom - 20, PROGRESS_COUNTER, 20, hdc, ProgressBar.left, ProgressBar.bottom, 0, 0, PATCOPY);
-    if (PROGRESS_COUNTER == rc.right)
+    SelectObject(*memDC, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(*memDC, RGB(77, 255, 77));
+    Rectangle(*memDC, rc.left, rc.bottom - 20, PROGRESS_COUNTER * rc.right / 600, rc.bottom);
+    if (PROGRESS_COUNTER == 600 && !TIME_UP)
     {
-        KillTimer(Window(), 666);
+        TIME_UP = TRUE;
         MessageBox(Window(), L"TIME IS UP", L"TIME IS UP", MB_OK);
     }
-    ReleaseDC(Window(), hdc);
-    PROGRESS_COUNTER += 2;
+    PROGRESS_COUNTER += 1;
 }
 
 void MainWindow::ClearProgressBar()
 {
-    RECT rc;
-    GetClientRect(Window(), &rc);
-    HDC hdc = GetDC(Window());
-    StretchBlt(hdc, rc.left, rc.bottom - 20, 0, 20, hdc, ProgressBar.left, ProgressBar.bottom, 0, 0, PATCOPY);
-    ReleaseDC(Window(), hdc);
-    PROGRESS_COUNTER = 0;
+    //rewrite this;
 
 }
 
@@ -345,7 +429,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
-        OutputDebugString(L"OPAQUE\n");
+        //OutputDebugString(L"OPAQUE\n");
     	//SetWindowLong(Window(), GWL_EXSTYLE,GetWindowLong(Window(), GWL_EXSTYLE) | WS_EX_LAYERED);
         SetLayeredWindowAttributes(Window(), 0, (255 * 100) / 100, LWA_ALPHA);
         UpdateWindow(Window());
@@ -356,7 +440,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_NCMOUSEMOVE:
     {
-        OutputDebugString(L"OPAQUE\n");
+        //OutputDebugString(L"OPAQUE\n");
         //SetWindowLong(Window(), GWL_EXSTYLE,GetWindowLong(Window(), GWL_EXSTYLE) | WS_EX_LAYERED);
         SetLayeredWindowAttributes(Window(), 0, (255 * 100) / 100, LWA_ALPHA);
         UpdateWindow(Window());
@@ -366,25 +450,25 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_TIMER:
     {
-        if (wParam == 42)
+        if (wParam == ACTIVITY_TIMER)
         {
-				OutputDebugString(L"SEMI-TRANSPARENT\n");
+				//OutputDebugString(L"SEMI-TRANSPARENT\n");
                 SetWindowLong(Window(), GWL_EXSTYLE, GetWindowLong(Window(), GWL_EXSTYLE) | WS_EX_LAYERED);
                 SetLayeredWindowAttributes(Window(), 0, (255 * 50) / 100, LWA_ALPHA);
+        		
                 UpdateWindow(Window());
         }
-    	if(wParam == 69)
+    	else if(wParam == SPAWN_TIMER)
     	{
             RandomBallSpawn();
     	}
-    	if(wParam == 31)
+    	else if(wParam == PROGRESSBAR_TIMER)
     	{
-            DrawBalls();
-            UpdateWindow(Window());
+            //DrawProgressBar();
     	}
-    	if(wParam == 666)
+    	else if(wParam == PHYSICS_TIMER)
     	{
-            DrawProgressBar();
+            UpdateBalls();
     	}
     }break;
 
@@ -456,18 +540,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
-        //HBRUSH brush = CreateSolidBrush(backgroundColor);
-        //FillRect(hdc, &ps.rcPaint, (HBRUSH)COLOR_BACKGROUND);
-        //HRGN rg = CreateEllipticRgn(0, 0, 50, 50);
-        //FillRgn(hdc, rg, (HBRUSH)RGB(55,55,55));
-        //Ellipse(hdc, 50, 50, 100, 100);
-        //DeleteObject(brush);
+		//..
         EndPaint(m_hwnd, &ps);
     }
     return 0;
 
     case WM_ERASEBKGND:
-        return -1;
+        return 1;
 
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);

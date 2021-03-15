@@ -1,6 +1,8 @@
 #ifndef BALL_H
 #define BALL_H
 #include <windows.h>
+#include <vector>
+
 
 
 class Ball
@@ -10,9 +12,10 @@ public:
     UINT radius;
     POINT coordinate;
     HRGN region;
-    INT dx;
-    INT dy;
-    Ball(UINT r, POINT p, INT deltax, INT deltay)
+    FLOAT dx;
+    FLOAT dy;
+    BOOL falling;
+    Ball(UINT r, POINT p, FLOAT deltax, FLOAT deltay)
     {
         radius = r;
         coordinate = p;
@@ -24,6 +27,8 @@ public:
     {
 
     };
+
+	
 	
 };
 #endif BALL_H

@@ -29,8 +29,7 @@ public:
 	BOOL Initialized;
 	HCURSOR hCursorSword;
 
-
-	std::vector<Ball> Balls;
+	
 	GemWindow Gems[MAX_GEM_COUNT_X][MAX_GEM_COUNT_Y];
 
 	/**
