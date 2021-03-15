@@ -27,10 +27,9 @@ public:
 	SIZE cGem;
 	int TIMER_COUNTER;
 	BOOL TIME_UP;
-	static BOOL Initializing;
+	//BOOL Initializing;
 	COLORREF backgroundColor;
-	static BOOL tracking;
-	
+	UINT PROGRESS_COUNTER;
 	std::vector<Ball> Balls ;
 
 	

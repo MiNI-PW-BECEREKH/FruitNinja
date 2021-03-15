@@ -14,6 +14,7 @@
 #define PROGRESSBAR_TIMER 666
 #define PHYSICS_TIMER 420
 
+
 //github.com/sbecerek/BeJeweled
 
 std::wstring convertUINT2LPCWSTR(UINT n)
@@ -213,31 +214,38 @@ void MainWindow::OnBoardSizeBig()
 void MainWindow::RandomBallSpawn()
 {
     srand(time(NULL));
-    FLOAT dx = rand() % 10 > 5 ? 1 : -1;
-    POINT p; p.x = rand() % MeasureSize(Window()).cx + rand()%50*dx; p.y = MeasureSize(Window()).cy + 100;
-    FLOAT dy = (rand() % p.x/16 + p.x/32)*-1;
-    Ball tmpball =  Ball(50,p,dx,dy);
-    tmpball.region = CreateEllipticRgn(tmpball.coordinate.x, tmpball.coordinate.y, tmpball.coordinate.x + tmpball.radius, tmpball.coordinate.y + tmpball.radius);
+    FLOAT dx = rand() % 10 > 5 ? 3 : -3;
+    POINT p; p.x = rand() % MeasureSize(Window()).cx + rand()%50; p.y = MeasureSize(Window()).cy + 10;
+    if (p.x > MeasureSize(Window()).cx/2)
+        dx = -3;
+    else dx = 3;
+    FLOAT dy = (rand() % 35 + 15)*-1;
+    UINT R = rand() % 255;
+    UINT G = rand() % 255;
+    UINT B = rand() % 255;
+    Ball tmpball =  Ball(75,p,dx,dy);
+    //tmpball.region = CreateEllipticRgn(tmpball.coordinate.x, tmpball.coordinate.y, tmpball.coordinate.x + tmpball.radius, tmpball.coordinate.y + tmpball.radius);
     tmpball.falling = FALSE;
-	if(tmpball.region != NULL)
+    tmpball.color = RGB(R, G, B);
+	//if(tmpball.region != NULL)
 	Balls.push_back(tmpball);
 
 }
 
-void DeleteBall(std::vector<Ball> b,Ball bal)
-{
-    for (int i = 0; i < b.size(); i++)
-    {
-        if (b[i].coordinate.x == bal.coordinate.x
-            && b[i].coordinate.y == bal.coordinate.y
-            && b[i].region == bal.region
-            && b[i].dx == bal.dx
-            && b[i].dy == bal.dy)
-        {
-            b.erase(b.begin() + i, b.end() + i + 2);
-        }
-    }
-}
+//void DeleteBall(std::vector<Ball> b,Ball bal)
+//{
+//    for (int i = 0; i < b.size(); i++)
+//    {
+//        if (b[i].coordinate.x == bal.coordinate.x
+//            && b[i].coordinate.y == bal.coordinate.y
+//            && b[i].region == bal.region
+//            && b[i].dx == bal.dx
+//            && b[i].dy == bal.dy)
+//        {
+//            b.erase(b.begin() + i, b.end() + i + 2);
+//        }
+//    }
+//}
 
 void MainWindow::UpdateBalls()
 {
@@ -282,7 +290,7 @@ void MainWindow::UpdateBalls()
 	
 	for(auto&x : Balls)
 	{
-
+        
 		
         if (x.coordinate.y < -100 )
         {
@@ -305,23 +313,19 @@ void MainWindow::UpdateBalls()
 
         //Draws once
         SelectObject(memDC, GetStockObject(DC_BRUSH));
-        SetDCBrushColor(memDC, RGB(55, 55, 55));
+        SetDCBrushColor(memDC, x.color);
         
-        OffsetRgn(x.region, x.dx, x.dy);
-
-		if(x.region != NULL)
-        FillRgn(
-            memDC,    // handle to device context
-            x.region, CreateSolidBrush(RGB(55, 55, 55)) // handle to region to be painted
-        );
-        //Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
+        Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
 
 	}
+    //ClearProgressBar();
     DrawProgressBar(&memDC);
     BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0,SRCCOPY);
     ReleaseDC(Window(), pDC);
     DeleteDC(memDC);
     DeleteObject(memBitmap);
+    //InvalidateRect(Window(), NULL, TRUE);
+    //UpdateWindow(Window());
 }
 
 
@@ -330,14 +334,17 @@ void MainWindow::UpdateBalls()
 void MainWindow::OnNewGame()
 {
 
-	
+    //Initializing = TRUE;
     Balls.clear();
     //clean the progress bar
-    ClearProgressBar();
+    //ClearProgressBar();
 	//empty the container
-    SetTimer(Window(), SPAWN_TIMER, 1000, 0);
+    TIME_UP = FALSE;
+    PROGRESS_COUNTER = 0;
+    SetTimer(Window(), SPAWN_TIMER, 500, 0);
     SetTimer(Window(), PROGRESSBAR_TIMER, 50, 0);
     SetTimer(Window(), PHYSICS_TIMER, 50, 0);
+    //Initializing = FALSE;
 }
 
 BOOL MainWindow::LogSettings(LPCWSTR str)
@@ -362,7 +369,7 @@ BOOL MainWindow::LogSettings(LPCWSTR str)
     return TRUE;
 }
 
-UINT PROGRESS_COUNTER = 0;
+
 
 void MainWindow::DrawProgressBar(HDC *memDC)
 {
@@ -371,18 +378,34 @@ void MainWindow::DrawProgressBar(HDC *memDC)
     SelectObject(*memDC, GetStockObject(DC_BRUSH));
     SetDCBrushColor(*memDC, RGB(77, 255, 77));
     Rectangle(*memDC, rc.left, rc.bottom - 20, PROGRESS_COUNTER * rc.right / 600, rc.bottom);
-    if (PROGRESS_COUNTER == 600 && !TIME_UP)
+    SetDCBrushColor(*memDC, RGB(226, 224, 223));
+    Rectangle(*memDC, PROGRESS_COUNTER * rc.right / 600, rc.bottom - 20, rc.right, rc.bottom);
+    if (PROGRESS_COUNTER == 600)
     {
-        TIME_UP = TRUE;
-        MessageBox(Window(), L"TIME IS UP", L"TIME IS UP", MB_OK);
+        //TIME_UP = TRUE;
+        KillTimer(Window(), PHYSICS_TIMER);
+        KillTimer(Window(), SPAWN_TIMER);
+        //MessageBox(Window(), L"TIME IS UP", L"TIME IS UP", MB_OK);
     }
-    PROGRESS_COUNTER += 1;
+	//if(!Initializing)
+		PROGRESS_COUNTER += 1;
 }
 
 void MainWindow::ClearProgressBar()
 {
-    //rewrite this;
-
+    HDC pDC = GetDC(Window());
+    HDC memDC = CreateCompatibleDC(pDC);
+    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, MeasureSize(Window()).cx, MeasureSize(Window()).cx);
+    SelectObject(memDC, memBitmap);
+    RECT rc;
+    GetClientRect(Window(), &rc);
+    SelectObject(memDC, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(memDC, RGB(226,224,223));
+    Rectangle(memDC, rc.left, rc.bottom - 20, rc.right, rc.bottom);
+    BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
+    ReleaseDC(Window(), pDC);
+    DeleteDC(memDC);
+    DeleteObject(memBitmap);
 }
 
 
@@ -460,7 +483,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
     	else if(wParam == SPAWN_TIMER)
     	{
-            RandomBallSpawn();
+    		//if(!TIME_UP && !Initializing)
+				RandomBallSpawn();
     	}
     	else if(wParam == PROGRESSBAR_TIMER)
     	{
@@ -468,7 +492,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     	}
     	else if(wParam == PHYSICS_TIMER)
     	{
-            UpdateBalls();
+    		//if(!TIME_UP && !Initializing)
+				UpdateBalls();
     	}
     }break;
 

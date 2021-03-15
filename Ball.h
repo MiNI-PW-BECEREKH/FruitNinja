@@ -11,7 +11,7 @@ class Ball
 public:
     UINT radius;
     POINT coordinate;
-    HRGN region;
+    COLORREF color;
     FLOAT dx;
     FLOAT dy;
     BOOL falling;
