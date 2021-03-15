@@ -1,6 +1,6 @@
 #include <ctime>
 #include "MainWindow.h"
-
+#include <Windowsx.h>
 #include "App.h"
 #include "resource.h"
 #include  "Arithmetics.h"
@@ -13,7 +13,7 @@
 #define SPAWN_TIMER 69
 #define PROGRESSBAR_TIMER 666
 #define PHYSICS_TIMER 420
-
+#define SLICING_TIMER 7
 
 //github.com/sbecerek/BeJeweled
 
@@ -213,7 +213,7 @@ void MainWindow::OnBoardSizeBig()
 
 void MainWindow::RandomBallSpawn()
 {
-    srand(time(NULL));
+    srand(PROGRESS_COUNTER);
     FLOAT dx = rand() % 10 > 5 ? 3 : -3;
     POINT p; p.x = rand() % MeasureSize(Window()).cx + rand()%50; p.y = MeasureSize(Window()).cy + 10;
     if (p.x > MeasureSize(Window()).cx/2)
@@ -246,6 +246,8 @@ void MainWindow::RandomBallSpawn()
 //        }
 //    }
 //}
+
+
 
 void MainWindow::UpdateBalls()
 {
@@ -286,6 +288,8 @@ void MainWindow::UpdateBalls()
         }
     }
 
+    //Get rid ofthe balls that we don't need to care about anymore
+    std::remove_if(Balls.begin(), Balls.end(), [rc](Ball& b) {return ((b.coordinate.y > rc.bottom + 10 && b.falling)) ; });
     
 	
 	for(auto&x : Balls)
@@ -298,15 +302,12 @@ void MainWindow::UpdateBalls()
             x.falling = TRUE;
         }
 
-        if(x.coordinate.y > rc.bottom && x.falling)
-        {
-            //DeleteBall(Balls,x);
-            //DeleteObject(x.region);
-        	//continue;
-        }
+
+		//if x's velocities direction to below it means it is falling
+        if (x.dy > 0)
+            x.falling = TRUE;
 
         x.dy += 0.98;
-		
         x.coordinate.x += x.dx;
         x.coordinate.y += x.dy;
 		
@@ -334,31 +335,18 @@ void MainWindow::UpdateBalls()
 void MainWindow::OnNewGame()
 {
 
-    //Initializing = TRUE;
     Balls.clear();
-    //clean the progress bar
-    //ClearProgressBar();
-	//empty the container
     TIME_UP = FALSE;
     PROGRESS_COUNTER = 0;
-    SetTimer(Window(), SPAWN_TIMER, 500, 0);
+    SetTimer(Window(), SPAWN_TIMER, 1000, 0);
     SetTimer(Window(), PROGRESSBAR_TIMER, 50, 0);
     SetTimer(Window(), PHYSICS_TIMER, 50, 0);
-    //Initializing = FALSE;
+    SetTimer(Window(), SLICING_TIMER, 50, 0);
+
 }
 
 BOOL MainWindow::LogSettings(LPCWSTR str)
 {
-  //  // Write data to the file
-	 //// For C use LPSTR (char*) or LPWSTR (wchar_t*)
-  //  DWORD bytesWritten;
-  //  WriteFile(
-  //      hFile,            // Handle to the file
-  //      str.c_str(),  // Buffer to write
-  //      str.size(),   // Buffer size
-  //      &bytesWritten,    // Bytes written
-  //      nullptr);         // Overlapped
-	
     if (!WritePrivateProfileString(
         L"GAME",
         L"SIZE",
@@ -382,33 +370,68 @@ void MainWindow::DrawProgressBar(HDC *memDC)
     Rectangle(*memDC, PROGRESS_COUNTER * rc.right / 600, rc.bottom - 20, rc.right, rc.bottom);
     if (PROGRESS_COUNTER == 600)
     {
-        //TIME_UP = TRUE;
         KillTimer(Window(), PHYSICS_TIMER);
         KillTimer(Window(), SPAWN_TIMER);
-        //MessageBox(Window(), L"TIME IS UP", L"TIME IS UP", MB_OK);
     }
-	//if(!Initializing)
-		PROGRESS_COUNTER += 1;
+	PROGRESS_COUNTER += 1;
 }
 
-void MainWindow::ClearProgressBar()
+//void MainWindow::ClearProgressBar()
+//{
+//    HDC pDC = GetDC(Window());
+//    HDC memDC = CreateCompatibleDC(pDC);
+//    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, MeasureSize(Window()).cx, MeasureSize(Window()).cx);
+//    SelectObject(memDC, memBitmap);
+//    RECT rc;
+//    GetClientRect(Window(), &rc);
+//    SelectObject(memDC, GetStockObject(DC_BRUSH));
+//    SetDCBrushColor(memDC, RGB(226,224,223));
+//    Rectangle(memDC, rc.left, rc.bottom - 20, rc.right, rc.bottom);
+//    BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
+//    ReleaseDC(Window(), pDC);
+//    DeleteDC(memDC);
+//    DeleteObject(memBitmap);
+//}
+
+
+
+void MainWindow::DetectSlicing(POINT mousepos)
 {
-    HDC pDC = GetDC(Window());
-    HDC memDC = CreateCompatibleDC(pDC);
-    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, MeasureSize(Window()).cx, MeasureSize(Window()).cx);
-    SelectObject(memDC, memBitmap);
-    RECT rc;
-    GetClientRect(Window(), &rc);
-    SelectObject(memDC, GetStockObject(DC_BRUSH));
-    SetDCBrushColor(memDC, RGB(226,224,223));
-    Rectangle(memDC, rc.left, rc.bottom - 20, rc.right, rc.bottom);
-    BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
-    ReleaseDC(Window(), pDC);
-    DeleteDC(memDC);
-    DeleteObject(memBitmap);
+	for(auto& x: Balls)
+	{
+		//if(x.radius>= 10)
+		if(sqrt(pow(x.coordinate.x - mousepos.x,2)+pow(x.coordinate.y - mousepos.y,2))<= x.radius)
+		{
+
+            Ball b1 = Ball(); Ball b2 = Ball(); Ball b3 = Ball(); Ball b4 = Ball();
+			//Initialize radius
+            b1.radius = x.radius / 2;
+            b2.radius = x.radius / 2;
+            b3.radius = x.radius / 2;
+            b4.radius = x.radius / 2;
+			//Find coordinates
+            b1.coordinate.x = x.coordinate.x - b1.radius/4;
+            b1.coordinate.y = x.coordinate.y - b1.radius/4;
+            b2.coordinate.x = x.coordinate.x + b2.radius/4;
+            b2.coordinate.y = x.coordinate.y - b2.radius/4;
+            b3.coordinate.x = x.coordinate.x - b3.radius/4;
+            b3.coordinate.y = x.coordinate.y + b3.radius/4;
+            b4.coordinate.x = x.coordinate.x + b4.radius/4;
+            b4.coordinate.y = x.coordinate.y + b4.radius/4;
+			//falling/
+            b1.falling = b2.falling = b3.falling = b4.falling = x.falling;
+            b1.color = b2.color = b3.color = b4.color = x.color;
+            b1.dx = b2.dx = b3.dx = b4.dx = x.dx;
+            b1.dy = b2.dy = b3.dy = b4.dy = abs(x.dy)*3/4;
+            Balls.push_back(b1);
+            Balls.push_back(b2);
+            Balls.push_back(b3);
+            Balls.push_back(b4);
+            std::remove_if(Balls.begin(), Balls.end(), [x](Ball& b) {return b == x; });
+
+		}
+	}
 }
-
-
 
 
 
@@ -452,19 +475,22 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
-        //OutputDebugString(L"OPAQUE\n");
-    	//SetWindowLong(Window(), GWL_EXSTYLE,GetWindowLong(Window(), GWL_EXSTYLE) | WS_EX_LAYERED);
+
         SetLayeredWindowAttributes(Window(), 0, (255 * 100) / 100, LWA_ALPHA);
         UpdateWindow(Window());
         KillTimer(Window(), 42);
         SetTimer(Window(), 42, 1000, NULL);
+  //      POINT mousepos;
+  //      mousepos.x = GET_X_LPARAM(lParam);
+  //      mousepos.y = GET_Y_LPARAM(lParam);
+		////Here detect collision send the mousepos;
+       // DetectSlicing(mousepos);
 
     }break;
 
     case WM_NCMOUSEMOVE:
     {
-        //OutputDebugString(L"OPAQUE\n");
-        //SetWindowLong(Window(), GWL_EXSTYLE,GetWindowLong(Window(), GWL_EXSTYLE) | WS_EX_LAYERED);
+
         SetLayeredWindowAttributes(Window(), 0, (255 * 100) / 100, LWA_ALPHA);
         UpdateWindow(Window());
         KillTimer(Window(), 42);
@@ -495,6 +521,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     		//if(!TIME_UP && !Initializing)
 				UpdateBalls();
     	}
+        else if(wParam == SLICING_TIMER)
+        {
+            POINT mousepos;
+            GetCursorPos(&mousepos);
+            ScreenToClient(Window(), &mousepos);
+            DetectSlicing(mousepos);
+        }
     }break;
 
     	

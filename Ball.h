@@ -15,6 +15,9 @@ public:
     FLOAT dx;
     FLOAT dy;
     BOOL falling;
+
+    Ball() {     }
+	
     Ball(UINT r, POINT p, FLOAT deltax, FLOAT deltay)
     {
         radius = r;
@@ -28,7 +31,21 @@ public:
 
     };
 
-	
+	BOOL operator==(const Ball b)
+	{
+        if (b.coordinate.x == coordinate.x
+            && b.coordinate.y == coordinate.y
+            && b.dx == dx
+            && dy == dy
+            && b.radius == radius
+            && b.falling == falling)
+        {
+            return TRUE;
+        }
+        else
+            return FALSE;
+	}
+
 	
 };
 #endif BALL_H

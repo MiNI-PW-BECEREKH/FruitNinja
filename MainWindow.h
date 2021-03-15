@@ -32,7 +32,7 @@ public:
 	UINT PROGRESS_COUNTER;
 	std::vector<Ball> Balls ;
 
-	
+
 	BOOL LogSettings(LPCWSTR);
 	DWORD CheckItem(UINT hItem, HMENU hmenu);
 	BOOL ClearBoard();
@@ -60,6 +60,7 @@ public:
 	void OnBoardSizeMedium();
 	void OnBoardSizeBig();
 	void OnNewGame();
+	void DetectSlicing(POINT);
 
 	void RandomBallSpawn();
 
