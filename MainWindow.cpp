@@ -289,8 +289,8 @@ void MainWindow::UpdateBalls()
     }
 
     //Get rid ofthe balls that we don't need to care about anymore
-    std::remove_if(Balls.begin(), Balls.end(), [rc](Ball& b) {return ((b.coordinate.y > rc.bottom + 10 && b.falling)) ; });
-    
+    auto removed = std::remove_if(Balls.begin(), Balls.end(), [rc](Ball& b) {return ((b.coordinate.y > rc.bottom + 10 && b.falling)) ; });
+    Balls.erase(removed, Balls.end());
 	
 	for(auto&x : Balls)
 	{
@@ -319,6 +319,18 @@ void MainWindow::UpdateBalls()
         Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
 
 	}
+
+	//TODO:SCORE text and line is not showing better sleep now
+    SelectObject(memDC, GetStockObject(DC_PEN));
+    SetDCPenColor(memDC, RGB(255, 255, 0));
+    SelectObject(memDC, GetStockObject(DC_BRUSH));
+    SetDCBrushColor(memDC, RGB(255, 255, 0));
+    PolylineTo(memDC,GetMousePolygon(),5);
+	
+	//HMMM
+    SelectObject(memDC, GetStockObject(DC_PEN));
+    SetDCPenColor(memDC, RGB(77, 255, 77));
+    DrawText(memDC, convertUINT2LPCWSTR(SCORE).c_str(), -1, &rc, DT_TOP | DT_RIGHT);
     //ClearProgressBar();
     DrawProgressBar(&memDC);
     BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0,SRCCOPY);
@@ -338,7 +350,8 @@ void MainWindow::OnNewGame()
     Balls.clear();
     TIME_UP = FALSE;
     PROGRESS_COUNTER = 0;
-    SetTimer(Window(), SPAWN_TIMER, 1000, 0);
+    SCORE = 0;
+    SetTimer(Window(), SPAWN_TIMER, 100, 0);
     SetTimer(Window(), PROGRESSBAR_TIMER, 50, 0);
     SetTimer(Window(), PHYSICS_TIMER, 50, 0);
     SetTimer(Window(), SLICING_TIMER, 50, 0);
@@ -376,59 +389,50 @@ void MainWindow::DrawProgressBar(HDC *memDC)
 	PROGRESS_COUNTER += 1;
 }
 
-//void MainWindow::ClearProgressBar()
-//{
-//    HDC pDC = GetDC(Window());
-//    HDC memDC = CreateCompatibleDC(pDC);
-//    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, MeasureSize(Window()).cx, MeasureSize(Window()).cx);
-//    SelectObject(memDC, memBitmap);
-//    RECT rc;
-//    GetClientRect(Window(), &rc);
-//    SelectObject(memDC, GetStockObject(DC_BRUSH));
-//    SetDCBrushColor(memDC, RGB(226,224,223));
-//    Rectangle(memDC, rc.left, rc.bottom - 20, rc.right, rc.bottom);
-//    BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
-//    ReleaseDC(Window(), pDC);
-//    DeleteDC(memDC);
-//    DeleteObject(memBitmap);
-//}
-
-
 
 void MainWindow::DetectSlicing(POINT mousepos)
 {
 	for(auto& x: Balls)
 	{
-		//if(x.radius>= 10)
+		
 		if(sqrt(pow(x.coordinate.x - mousepos.x,2)+pow(x.coordinate.y - mousepos.y,2))<= x.radius)
 		{
+            SCORE++;
+            Ball tmp = x;
 
             Ball b1 = Ball(); Ball b2 = Ball(); Ball b3 = Ball(); Ball b4 = Ball();
 			//Initialize radius
-            b1.radius = x.radius / 2;
-            b2.radius = x.radius / 2;
-            b3.radius = x.radius / 2;
-            b4.radius = x.radius / 2;
+            b1.radius = tmp.radius / 2;
+            b2.radius = tmp.radius / 2;
+            b3.radius = tmp.radius / 2;
+            b4.radius = tmp.radius / 2;
 			//Find coordinates
-            b1.coordinate.x = x.coordinate.x - b1.radius/4;
-            b1.coordinate.y = x.coordinate.y - b1.radius/4;
-            b2.coordinate.x = x.coordinate.x + b2.radius/4;
-            b2.coordinate.y = x.coordinate.y - b2.radius/4;
-            b3.coordinate.x = x.coordinate.x - b3.radius/4;
-            b3.coordinate.y = x.coordinate.y + b3.radius/4;
-            b4.coordinate.x = x.coordinate.x + b4.radius/4;
-            b4.coordinate.y = x.coordinate.y + b4.radius/4;
+            b1.coordinate.x = tmp.coordinate.x - b1.radius/3;
+            b1.coordinate.y = tmp.coordinate.y - b1.radius/3;
+            b2.coordinate.x = tmp.coordinate.x + b2.radius/3;
+            b2.coordinate.y = tmp.coordinate.y - b2.radius/3;
+            b3.coordinate.x = tmp.coordinate.x - b3.radius/3;
+            b3.coordinate.y = tmp.coordinate.y + b3.radius/3;
+            b4.coordinate.x = tmp.coordinate.x + b4.radius/3;
+            b4.coordinate.y = tmp.coordinate.y + b4.radius/3;
 			//falling/
-            b1.falling = b2.falling = b3.falling = b4.falling = x.falling;
-            b1.color = b2.color = b3.color = b4.color = x.color;
-            b1.dx = b2.dx = b3.dx = b4.dx = x.dx;
-            b1.dy = b2.dy = b3.dy = b4.dy = abs(x.dy)*3/4;
+            b1.falling = b2.falling = b3.falling = b4.falling = tmp.falling;
+            b1.color = b2.color = b3.color = b4.color = tmp.color;
+            //if mouse is to left of these new particles add 1px velo to right and vice versa
+			
+            b1.dx = b2.dx = b3.dx = b4.dx = tmp.dx;
+            b1.dy = b2.dy = b3.dy = b4.dy = tmp.dy*1/2;
+            if(tmp.radius/2 >= 10)
+            {
             Balls.push_back(b1);
             Balls.push_back(b2);
             Balls.push_back(b3);
             Balls.push_back(b4);
-            std::remove_if(Balls.begin(), Balls.end(), [x](Ball& b) {return b == x; });
-
+	            
+            }
+	            
+            auto removed = std::remove_if(Balls.begin(), Balls.end(), [x](Ball& b) {return x.coordinate.x == b.coordinate.x && x.coordinate.y == b.coordinate.y; });
+            Balls.erase(removed, Balls.end());
 		}
 	}
 }
@@ -480,10 +484,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         UpdateWindow(Window());
         KillTimer(Window(), 42);
         SetTimer(Window(), 42, 1000, NULL);
-  //      POINT mousepos;
-  //      mousepos.x = GET_X_LPARAM(lParam);
-  //      mousepos.y = GET_Y_LPARAM(lParam);
-		////Here detect collision send the mousepos;
+        POINT mousepos;
+        mousepos.x = GET_X_LPARAM(lParam);
+        mousepos.y = GET_Y_LPARAM(lParam);
+        AddToMousePolygon(mousepos);
+        //auto removed = std::remove(mousePolygon.begin()+1, mousePolygon.end()+2);
+        
+		//Here detect collision send the mousepos;
        // DetectSlicing(mousepos);
 
     }break;

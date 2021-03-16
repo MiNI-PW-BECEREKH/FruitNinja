@@ -31,7 +31,9 @@ public:
 	COLORREF backgroundColor;
 	UINT PROGRESS_COUNTER;
 	std::vector<Ball> Balls ;
-
+	INT SCORE;
+	POINT mousePolygon[5];
+	BYTE mousePolygonMan[5] = {PT_LINETO,PT_LINETO, PT_LINETO, PT_LINETO, PT_LINETO};
 
 	BOOL LogSettings(LPCWSTR);
 	DWORD CheckItem(UINT hItem, HMENU hmenu);
@@ -65,9 +67,22 @@ public:
 	void RandomBallSpawn();
 
 	void UpdateBalls();
-    
 
+	void AddToMousePolygon(POINT p)
+	{
+		
+		mousePolygon[5] = p;
+		for(int i=0; i< 4 ; i++)
+		{
+			mousePolygon[i] = mousePolygon[i + 1];
+		}
+	}
 
+	POINT* GetMousePolygon()
+	{
+		return &mousePolygon[0];	
+	}
+	
 };
 
 #endif // !MAINWINDOW_H
