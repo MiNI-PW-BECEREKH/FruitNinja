@@ -252,12 +252,12 @@ void MainWindow::RandomBallSpawn()
 void MainWindow::UpdateBalls()
 {
 
-    HDC pDC = GetDC(Window());
-    HDC memDC = CreateCompatibleDC(pDC);
-    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, MeasureSize(Window()).cx, MeasureSize(Window()).cx);
-    SelectObject(memDC, memBitmap);
     RECT rc;
     GetClientRect(Window(), &rc);
+    HDC pDC = GetDC(Window());
+    HDC memDC = CreateCompatibleDC(pDC);
+    HBITMAP memBitmap = CreateCompatibleBitmap(pDC, rc.right - rc.left, rc.bottom - rc.top);//TODO:fix
+    SelectObject(memDC, memBitmap);
     FillRect(memDC, &rc, (HBRUSH)COLOR_BACKGROUND);
     for (unsigned int i = 0; i < cGem.cx; i++)
     {
@@ -291,7 +291,13 @@ void MainWindow::UpdateBalls()
     //Get rid ofthe balls that we don't need to care about anymore
     auto removed = std::remove_if(Balls.begin(), Balls.end(), [rc](Ball& b) {return ((b.coordinate.y > rc.bottom + 10 && b.falling)) ; });
     Balls.erase(removed, Balls.end());
-	
+
+	if(!UPDATE_BALLS)
+        for (auto& x: Balls)
+        {
+            x.dx = 0;
+            x.dy = 0;
+        }
 	for(auto&x : Balls)
 	{
         
@@ -319,15 +325,40 @@ void MainWindow::UpdateBalls()
         Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
 
 	}
+    if(!DRAW_KNIFE_TRACE)
+    {
+        for(int i = 0 ; i <= 5; i++)
+        {
+            mousePolygon[i] = mousePolygon[6];
+	    HPEN pen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+	    HPEN oldpen = (HPEN)SelectObject(memDC, pen);
+	    if(Polyline(memDC, mousePolygon, 7))
+	    {
+	        OutputDebugString(L"DRAWING LINE\n");
+	    }
+		//HMMM
+	    SelectObject(memDC, oldpen);
+	    DeleteObject(pen);
+	        
+        }
+    }
+    else
+    {
+        HPEN pen = CreatePen(PS_SOLID, 2, RGB(255, 255, 0));
+        HPEN oldpen = (HPEN)SelectObject(memDC, pen);
+        if (Polyline(memDC, mousePolygon, 7))
+        {
+            OutputDebugString(L"DRAWING LINE\n");
+        }
+        //HMMM
+        SelectObject(memDC, oldpen);
+        DeleteObject(pen);
+    }
 
-	//TODO:SCORE text and line is not showing better sleep now
-    SelectObject(memDC, GetStockObject(DC_PEN));
-    SetDCPenColor(memDC, RGB(255, 255, 0));
-    SelectObject(memDC, GetStockObject(DC_BRUSH));
-    SetDCBrushColor(memDC, RGB(255, 255, 0));
-    PolylineTo(memDC,GetMousePolygon(),5);
+
+		
 	
-	//HMMM
+	
     SelectObject(memDC, GetStockObject(DC_PEN));
     SetDCPenColor(memDC, RGB(77, 255, 77));
     DrawText(memDC, convertUINT2LPCWSTR(SCORE).c_str(), -1, &rc, DT_TOP | DT_RIGHT);
@@ -337,6 +368,7 @@ void MainWindow::UpdateBalls()
     ReleaseDC(Window(), pDC);
     DeleteDC(memDC);
     DeleteObject(memBitmap);
+
     //InvalidateRect(Window(), NULL, TRUE);
     //UpdateWindow(Window());
 }
@@ -350,8 +382,12 @@ void MainWindow::OnNewGame()
     Balls.clear();
     TIME_UP = FALSE;
     PROGRESS_COUNTER = 0;
+    DRAW_KNIFE_TRACE = TRUE;
+    SPAWN_BALLS = TRUE;
+    UPDATE_BALLS = TRUE;
+    BALL_COLLISION = TRUE;
     SCORE = 0;
-    SetTimer(Window(), SPAWN_TIMER, 100, 0);
+    SetTimer(Window(), SPAWN_TIMER, 500, 0);
     SetTimer(Window(), PROGRESSBAR_TIMER, 50, 0);
     SetTimer(Window(), PHYSICS_TIMER, 50, 0);
     SetTimer(Window(), SLICING_TIMER, 50, 0);
@@ -381,9 +417,17 @@ void MainWindow::DrawProgressBar(HDC *memDC)
     Rectangle(*memDC, rc.left, rc.bottom - 20, PROGRESS_COUNTER * rc.right / 600, rc.bottom);
     SetDCBrushColor(*memDC, RGB(226, 224, 223));
     Rectangle(*memDC, PROGRESS_COUNTER * rc.right / 600, rc.bottom - 20, rc.right, rc.bottom);
+    if(PROGRESS_COUNTER == 599)
+        //neglect adding points just so close to end;
+        DRAW_KNIFE_TRACE = FALSE;
+
     if (PROGRESS_COUNTER == 600)
     {
-        KillTimer(Window(), PHYSICS_TIMER);
+        TIME_UP = TRUE;
+        BALL_COLLISION = FALSE;
+        SPAWN_BALLS = FALSE;
+        UPDATE_BALLS = FALSE;
+        //KillTimer(Window(), PHYSICS_TIMER);
         KillTimer(Window(), SPAWN_TIMER);
     }
 	PROGRESS_COUNTER += 1;
@@ -392,6 +436,21 @@ void MainWindow::DrawProgressBar(HDC *memDC)
 
 void MainWindow::DetectSlicing(POINT mousepos)
 {
+    RECT rc;
+    GetClientRect(Window(), &rc);
+    //if (mousepos.x < rc.left || mousepos.x > rc.right || mousepos.y > rc.bottom || mousepos.y < rc.top)
+    //{
+    //    for (int i = 0; i <= 5; i++)
+    //        mousePolygon[i] = mousePolygon[6];
+    //}
+    //else if(!DRAW_KNIFE_TRACE)
+    //    for (int i = 0; i <= 5; i++)
+    //        mousePolygon[i] = mousePolygon[6];
+    //else
+	if(DRAW_KNIFE_TRACE)
+        AddToMousePolygon(mousepos);
+
+	if(BALL_COLLISION)
 	for(auto& x: Balls)
 	{
 		
@@ -479,7 +538,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
-
+        //BALL_COLLISION = TRUE;
+        if (!TIME_UP)
+            BALL_COLLISION = TRUE;
         SetLayeredWindowAttributes(Window(), 0, (255 * 100) / 100, LWA_ALPHA);
         UpdateWindow(Window());
         KillTimer(Window(), 42);
@@ -487,11 +548,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         POINT mousepos;
         mousepos.x = GET_X_LPARAM(lParam);
         mousepos.y = GET_Y_LPARAM(lParam);
-        AddToMousePolygon(mousepos);
-        //auto removed = std::remove(mousePolygon.begin()+1, mousePolygon.end()+2);
+
         
-		//Here detect collision send the mousepos;
-       // DetectSlicing(mousepos);
 
     }break;
 
@@ -509,6 +567,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (wParam == ACTIVITY_TIMER)
         {
 				//OutputDebugString(L"SEMI-TRANSPARENT\n");
+				BALL_COLLISION = FALSE;
                 SetWindowLong(Window(), GWL_EXSTYLE, GetWindowLong(Window(), GWL_EXSTYLE) | WS_EX_LAYERED);
                 SetLayeredWindowAttributes(Window(), 0, (255 * 50) / 100, LWA_ALPHA);
         		

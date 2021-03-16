@@ -32,8 +32,11 @@ public:
 	UINT PROGRESS_COUNTER;
 	std::vector<Ball> Balls ;
 	INT SCORE;
-	POINT mousePolygon[5];
-	BYTE mousePolygonMan[5] = {PT_LINETO,PT_LINETO, PT_LINETO, PT_LINETO, PT_LINETO};
+	POINT mousePolygon[7];
+	BOOL DRAW_KNIFE_TRACE;
+	BOOL SPAWN_BALLS;
+	BOOL UPDATE_BALLS;
+	BOOL BALL_COLLISION;
 
 	BOOL LogSettings(LPCWSTR);
 	DWORD CheckItem(UINT hItem, HMENU hmenu);
@@ -71,8 +74,8 @@ public:
 	void AddToMousePolygon(POINT p)
 	{
 		
-		mousePolygon[5] = p;
-		for(int i=0; i< 4 ; i++)
+		mousePolygon[6] = p;
+		for(int i=0; i<= 5 ; i++)
 		{
 			mousePolygon[i] = mousePolygon[i + 1];
 		}
