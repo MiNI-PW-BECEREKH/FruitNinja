@@ -232,20 +232,6 @@ void MainWindow::RandomBallSpawn()
 
 }
 
-//void DeleteBall(std::vector<Ball> b,Ball bal)
-//{
-//    for (int i = 0; i < b.size(); i++)
-//    {
-//        if (b[i].coordinate.x == bal.coordinate.x
-//            && b[i].coordinate.y == bal.coordinate.y
-//            && b[i].region == bal.region
-//            && b[i].dx == bal.dx
-//            && b[i].dy == bal.dy)
-//        {
-//            b.erase(b.begin() + i, b.end() + i + 2);
-//        }
-//    }
-//}
 
 
 
@@ -293,11 +279,12 @@ void MainWindow::UpdateBalls()
     Balls.erase(removed, Balls.end());
 
 	if(!UPDATE_BALLS)
-        for (auto& x: Balls)
-        {
-            x.dx = 0;
-            x.dy = 0;
-        }
+    for (auto& x: Balls)
+    {
+        x.dx = 0;
+        x.dy = 0;
+    }
+	
 	for(auto&x : Balls)
 	{
         
@@ -356,12 +343,14 @@ void MainWindow::UpdateBalls()
     }
 
 
-		
+    SetTextColor(memDC, RGB(77, 255, 77));
+    HFONT font = CreateFont(28, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
+        CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH,NULL);
+    SelectObject(memDC, font);
+    SetBkMode(memDC, TRANSPARENT);
 	
-	
-    SelectObject(memDC, GetStockObject(DC_PEN));
-    SetDCPenColor(memDC, RGB(77, 255, 77));
-    DrawText(memDC, convertUINT2LPCWSTR(SCORE).c_str(), -1, &rc, DT_TOP | DT_RIGHT);
+    DrawText(memDC, convertUINT2LPCWSTR(SCORE).c_str(), convertUINT2LPCWSTR(SCORE).size(), &rc, DT_RIGHT | DT_TOP);
+
     //ClearProgressBar();
     DrawProgressBar(&memDC);
     BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0,SRCCOPY);
@@ -458,7 +447,8 @@ void MainWindow::DetectSlicing(POINT mousepos)
 		{
             SCORE++;
             Ball tmp = x;
-
+            auto removed = std::remove_if(Balls.begin(), Balls.end(), [x](Ball& b) {return x.coordinate.x == b.coordinate.x && x.coordinate.y == b.coordinate.y; });
+            Balls.erase(removed, Balls.end());
             Ball b1 = Ball(); Ball b2 = Ball(); Ball b3 = Ball(); Ball b4 = Ball();
 			//Initialize radius
             b1.radius = tmp.radius / 2;
@@ -481,7 +471,7 @@ void MainWindow::DetectSlicing(POINT mousepos)
 			
             b1.dx = b2.dx = b3.dx = b4.dx = tmp.dx;
             b1.dy = b2.dy = b3.dy = b4.dy = tmp.dy*1/2;
-            if(tmp.radius/2 >= 10)
+            //if(tmp.radius/2 >= 10)
             {
             Balls.push_back(b1);
             Balls.push_back(b2);
@@ -490,8 +480,7 @@ void MainWindow::DetectSlicing(POINT mousepos)
 	            
             }
 	            
-            auto removed = std::remove_if(Balls.begin(), Balls.end(), [x](Ball& b) {return x.coordinate.x == b.coordinate.x && x.coordinate.y == b.coordinate.y; });
-            Balls.erase(removed, Balls.end());
+
 		}
 	}
 }
