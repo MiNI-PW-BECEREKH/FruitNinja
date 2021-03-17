@@ -378,6 +378,7 @@ void MainWindow::UpdateBalls()
         SelectObject(memDC2, membitmap2);
         //SetDCBrushColor(memDC2, RGB(77, 255, 77));
 
+
         SelectObject(memDC2, GetStockObject(DC_BRUSH));
         SetDCBrushColor(memDC2, RGB(0, 255, 0));
         if (!Rectangle(memDC2, rc.left, rc.top, rc.right, rc.bottom))
@@ -471,9 +472,19 @@ void MainWindow::DrawProgressBar(HDC *memDC,HDC *pDC)
     GetClientRect(Window(), &rc);
     SelectObject(*memDC, GetStockObject(DC_BRUSH));
     SetDCBrushColor(*memDC, RGB(77, 255, 77));
+    HPEN greenPEN = CreatePen(PS_SOLID, 1, RGB(77, 255, 77));
+    HPEN oldPEN  = (HPEN)SelectObject(*memDC, greenPEN);
     Rectangle(*memDC, rc.left, rc.bottom - 20, PROGRESS_COUNTER * rc.right / 600, rc.bottom);
+    SelectObject(*memDC, oldPEN);
+    DeleteObject(greenPEN);
+
+
     SetDCBrushColor(*memDC, RGB(226, 224, 223));
+    HPEN whitePEN = CreatePen(PS_SOLID, 1, RGB(226, 224, 223));
+    SelectObject(*memDC, whitePEN);
     Rectangle(*memDC, PROGRESS_COUNTER * rc.right / 600, rc.bottom - 20, rc.right, rc.bottom);
+    SelectObject(*memDC, oldPEN);
+    DeleteObject(whitePEN);
     if(PROGRESS_COUNTER == 599)
         //neglect adding points just so close to end;
         DRAW_KNIFE_TRACE = FALSE;
@@ -693,6 +704,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		//for now let's initialize small
     	//later we will check the config
         //OnBoardSizeSmall();
+        //set clip region so we don't have somuch memory usage due to unused balls
+        //RECT clipRC;
+        //GetClientRect(Window(), &clipRC);
+        //clipRC.top -= 100; clipRC.bottom += 100; clipRC.left -= 100; clipRC.right += 100;
+        //HRGN clipRGN = CreateRectRgnIndirect(&clipRC);
+        //SetWindowRgn(Window(),clipRGN , FALSE);
+
         UINT profileMessage = GetPrivateProfileInt(L"GAME", L"SIZE", 0, L"./FruitNinja.ini");
     		
 		switch (profileMessage)
