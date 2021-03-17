@@ -233,7 +233,7 @@ void MainWindow::RandomBallSpawn()
     if (p.x > MeasureSize(Window()).cx/2)
         dx = -3;
     else dx = 3;
-    FLOAT dy = (rand() % 30 + 15)*-1;
+    FLOAT dy = (rand() % 40 + 20)*-1;
     UINT R = rand() % 255;
     UINT G = rand() % 255;
     UINT B = rand() % 255;
@@ -316,13 +316,15 @@ void MainWindow::UpdateBalls()
             x.falling = TRUE;
 
         x.dy += 0.98;
-        x.coordinate.x += x.dx;
-        x.coordinate.y += x.dy;
+        x.coordinate.x += x.dx/2;
+        x.coordinate.y += x.dy/2;
 		
 
         //Draws once
         SelectObject(memDC, GetStockObject(DC_BRUSH));
         SetDCBrushColor(memDC, x.color);
+        SelectObject(memDC, GetStockObject(DC_PEN));
+        SetDCPenColor(memDC, x.color);
         
         Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
 
@@ -570,7 +572,7 @@ void MainWindow::DetectSlicing(POINT mousepos)
             else b4.dy = -1 * tmp.dy * 0.9 - rand() % 5;
 
 			
-            if(tmp.radius/2 >= 4)
+            //if(tmp.radius/2 >= 4)
             {
             Balls.push_back(b1);
             Balls.push_back(b2);
