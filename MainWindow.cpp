@@ -17,6 +17,18 @@
 
 //github.com/sbecerek/BeJeweled
 
+std::wstring s2ws(const std::string& s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t* buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
+
 std::wstring convertUINT2LPCWSTR(UINT n)
 {
     std::wstringstream wss;
@@ -213,13 +225,15 @@ void MainWindow::OnBoardSizeBig()
 
 void MainWindow::RandomBallSpawn()
 {
+    RECT rc;
+    GetClientRect(Window(), &rc);
     srand(PROGRESS_COUNTER);
     FLOAT dx = rand() % 10 > 5 ? 3 : -3;
     POINT p; p.x = rand() % MeasureSize(Window()).cx + rand()%50; p.y = MeasureSize(Window()).cy + 10;
     if (p.x > MeasureSize(Window()).cx/2)
         dx = -3;
     else dx = 3;
-    FLOAT dy = (rand() % 35 + 15)*-1;
+    FLOAT dy = (rand() % 30 + 15)*-1;
     UINT R = rand() % 255;
     UINT G = rand() % 255;
     UINT B = rand() % 255;
@@ -244,7 +258,7 @@ void MainWindow::UpdateBalls()
     HDC memDC = CreateCompatibleDC(pDC);
     HBITMAP memBitmap = CreateCompatibleBitmap(pDC, rc.right - rc.left, rc.bottom - rc.top);//TODO:fix
     SelectObject(memDC, memBitmap);
-    FillRect(memDC, &rc, (HBRUSH)COLOR_BACKGROUND);
+    FillRect(memDC, &rc, (HBRUSH)WHITE_BRUSH);
     for (unsigned int i = 0; i < cGem.cx; i++)
     {
         for (unsigned int j = 0; j < cGem.cy; j++)
@@ -275,7 +289,7 @@ void MainWindow::UpdateBalls()
     }
 
     //Get rid ofthe balls that we don't need to care about anymore
-    auto removed = std::remove_if(Balls.begin(), Balls.end(), [rc](Ball& b) {return ((b.coordinate.y > rc.bottom + 10 && b.falling)) ; });
+    auto removed = std::remove_if(Balls.begin(), Balls.end(), [rc](Ball& b) {return ((b.coordinate.y > rc.bottom + 5 && b.falling)) ; });
     Balls.erase(removed, Balls.end());
 
 	if(!UPDATE_BALLS)
@@ -289,9 +303,10 @@ void MainWindow::UpdateBalls()
 	{
         
 		
-        if (x.coordinate.y < -100 )
+        if (x.coordinate.y < -75 )
         {
             x.dy *= -1;
+            x.dy /= 2;
             x.falling = TRUE;
         }
 
@@ -321,7 +336,7 @@ void MainWindow::UpdateBalls()
 	    HPEN oldpen = (HPEN)SelectObject(memDC, pen);
 	    if(Polyline(memDC, mousePolygon, 7))
 	    {
-	        OutputDebugString(L"DRAWING LINE\n");
+	        //OutputDebugString(L"DRAWING LINE\n");
 	    }
 		//HMMM
 	    SelectObject(memDC, oldpen);
@@ -335,7 +350,7 @@ void MainWindow::UpdateBalls()
         HPEN oldpen = (HPEN)SelectObject(memDC, pen);
         if (Polyline(memDC, mousePolygon, 7))
         {
-            OutputDebugString(L"DRAWING LINE\n");
+            //OutputDebugString(L"DRAWING LINE\n");
         }
         //HMMM
         SelectObject(memDC, oldpen);
@@ -352,8 +367,59 @@ void MainWindow::UpdateBalls()
     DrawText(memDC, convertUINT2LPCWSTR(SCORE).c_str(), convertUINT2LPCWSTR(SCORE).size(), &rc, DT_RIGHT | DT_TOP);
 
     //ClearProgressBar();
-    DrawProgressBar(&memDC);
-    BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0,SRCCOPY);
+    DrawProgressBar(&memDC,&pDC);
+    if(TIME_UP )
+    {
+        DRAW_END_SCREEN = FALSE;
+        HDC memDC2 = CreateCompatibleDC(memDC);
+        HBITMAP membitmap2 = CreateCompatibleBitmap(memDC, rc.right - rc.left, rc.bottom - rc.top);
+        SelectObject(memDC2, membitmap2);
+        //SetDCBrushColor(memDC2, RGB(77, 255, 77));
+
+        SelectObject(memDC2, GetStockObject(DC_BRUSH));
+        SetDCBrushColor(memDC2, RGB(0, 255, 0));
+        if (!Rectangle(memDC2, rc.left, rc.top, rc.right, rc.bottom))
+            OutputDebugString(L"Coloring Failed");
+
+    	
+        BLENDFUNCTION blnfn;
+        blnfn.BlendOp = AC_SRC_OVER;
+        blnfn.BlendFlags = 0;
+        blnfn.SourceConstantAlpha = (255 * 50)/100;
+        blnfn.AlphaFormat =  0;
+        if (!GdiAlphaBlend(memDC, 0, 0, rc.right - rc.left, rc.bottom - rc.top, memDC2, 0, 0, rc.right - rc.left, rc.bottom - rc.top, blnfn))
+            OutputDebugString(L"Alpha Blend Failed");
+
+        //BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
+
+        SetTextColor(memDC, RGB(255, 255, 255));
+        HFONT font = CreateFont(40, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
+            CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, NULL);
+        SelectObject(memDC, font);
+        SetBkMode(memDC, TRANSPARENT);
+
+        std::ostringstream ss;
+        ss << "SCORE:" << std::endl
+            << SCORE;
+        std::string s = ss.str();
+
+        RECT modifiedrc = rc;
+        modifiedrc.top = rc.top + rc.bottom / 2 - 50;
+
+        DrawText(memDC, s2ws(s).c_str(), s2ws(s).size(), &modifiedrc, DT_CENTER | DT_TOP);
+
+    	
+
+        BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
+
+        DeleteObject(membitmap2);
+        DeleteDC(memDC);
+
+    }
+    else
+     BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
+
+	
     ReleaseDC(Window(), pDC);
     DeleteDC(memDC);
     DeleteObject(memBitmap);
@@ -397,7 +463,7 @@ BOOL MainWindow::LogSettings(LPCWSTR str)
 
 
 
-void MainWindow::DrawProgressBar(HDC *memDC)
+void MainWindow::DrawProgressBar(HDC *memDC,HDC *pDC)
 {
     RECT rc;
     GetClientRect(Window(), &rc);
@@ -412,6 +478,7 @@ void MainWindow::DrawProgressBar(HDC *memDC)
 
     if (PROGRESS_COUNTER == 600)
     {
+        DRAW_END_SCREEN = TRUE;
         TIME_UP = TRUE;
         BALL_COLLISION = FALSE;
         SPAWN_BALLS = FALSE;
@@ -456,22 +523,50 @@ void MainWindow::DetectSlicing(POINT mousepos)
             b3.radius = tmp.radius / 2;
             b4.radius = tmp.radius / 2;
 			//Find coordinates
-            b1.coordinate.x = tmp.coordinate.x - b1.radius/3;
-            b1.coordinate.y = tmp.coordinate.y - b1.radius/3;
-            b2.coordinate.x = tmp.coordinate.x + b2.radius/3;
-            b2.coordinate.y = tmp.coordinate.y - b2.radius/3;
-            b3.coordinate.x = tmp.coordinate.x - b3.radius/3;
-            b3.coordinate.y = tmp.coordinate.y + b3.radius/3;
-            b4.coordinate.x = tmp.coordinate.x + b4.radius/3;
-            b4.coordinate.y = tmp.coordinate.y + b4.radius/3;
+            b1.coordinate.x = tmp.coordinate.x - b1.radius/2;
+            b1.coordinate.y = tmp.coordinate.y - b1.radius/2;
+            b2.coordinate.x = tmp.coordinate.x + b2.radius/2;
+            b2.coordinate.y = tmp.coordinate.y - b2.radius/2;
+            b3.coordinate.x = tmp.coordinate.x - b3.radius/2;
+            b3.coordinate.y = tmp.coordinate.y + b3.radius/2;
+            b4.coordinate.x = tmp.coordinate.x + b4.radius/2;
+            b4.coordinate.y = tmp.coordinate.y + b4.radius/2;
 			//falling/
             b1.falling = b2.falling = b3.falling = b4.falling = tmp.falling;
             b1.color = b2.color = b3.color = b4.color = tmp.color;
             //if mouse is to left of these new particles add 1px velo to right and vice versa
+			//maybe give a bit of force from the center of tmp
+            srand(mousepos.x + mousepos.y);
+            if (mousepos.x < b1.coordinate.x)
+                b1.dx = tmp.dx + rand() %5;
+            else b1.dx = tmp.dx *-1 - rand() % 5;
+            if (mousepos.y < b1.coordinate.y)
+                b1.dy = tmp.dy * 0.9 + rand() % 5;
+            else b1.dy = -1*tmp.dy * 0.9 - rand() % 5;
+
+            if (mousepos.x < b2.coordinate.x)
+                b2.dx = tmp.dx + rand() % 5;
+            else b2.dx = tmp.dx * -1 - rand() % 5;
+            if (mousepos.y < b2.coordinate.y)
+                b2.dy = tmp.dy * 0.9 + rand() % 5;
+            else b2.dy = -1 * tmp.dy * 0.9 - rand() % 5;
+
+            if (mousepos.x < b3.coordinate.x)
+                b3.dx = tmp.dx + rand() % 5;
+            else b3.dx = tmp.dx * -1 - rand() % 5;
+            if (mousepos.y < b3.coordinate.y)
+                b3.dy = tmp.dy * 0.9 + rand() % 5;
+            else b3.dy = -1 * tmp.dy * 0.9 - rand() % 5;
+
+            if (mousepos.x < b4.coordinate.x)
+                b4.dx = tmp.dx + rand() % 5;
+            else b4.dx = tmp.dx * -1 - rand() % 5;
+            if (mousepos.y < b4.coordinate.y)
+                b4.dy = tmp.dy * 0.9 + rand() % 5;
+            else b4.dy = -1 * tmp.dy * 0.9 - rand() % 5;
+
 			
-            b1.dx = b2.dx = b3.dx = b4.dx = tmp.dx;
-            b1.dy = b2.dy = b3.dy = b4.dy = tmp.dy*1/2;
-            //if(tmp.radius/2 >= 10)
+            if(tmp.radius/2 >= 4)
             {
             Balls.push_back(b1);
             Balls.push_back(b2);

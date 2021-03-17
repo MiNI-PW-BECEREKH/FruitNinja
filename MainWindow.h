@@ -37,6 +37,7 @@ public:
 	BOOL SPAWN_BALLS;
 	BOOL UPDATE_BALLS;
 	BOOL BALL_COLLISION;
+	BOOL DRAW_END_SCREEN;
 
 	BOOL LogSettings(LPCWSTR);
 	DWORD CheckItem(UINT hItem, HMENU hmenu);
@@ -60,7 +61,7 @@ public:
 	SIZE GetClientSize() { return clientSize; }
 
 	void ClearProgressBar();
-	void DrawProgressBar(HDC *);
+	void DrawProgressBar(HDC *,HDC*);
 	void OnBoardSizeSmall();
 	void OnBoardSizeMedium();
 	void OnBoardSizeBig();
