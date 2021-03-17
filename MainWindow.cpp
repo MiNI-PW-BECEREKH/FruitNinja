@@ -506,10 +506,13 @@ void MainWindow::DetectSlicing(POINT mousepos)
 	if(DRAW_KNIFE_TRACE)
         AddToMousePolygon(mousepos);
 
-	if(BALL_COLLISION)
+    FLOAT mouseVelocityX = mousePolygon[6].x - mousePolygon[0].x;
+    FLOAT mouseVelocityY = mousePolygon[6].y - mousePolygon[0].y;;
+
+	if(BALL_COLLISION && (mouseVelocityX != 0 || mouseVelocityY != 0))
 	for(auto& x: Balls)
 	{
-		
+        
 		if(sqrt(pow(x.coordinate.x - mousepos.x,2)+pow(x.coordinate.y - mousepos.y,2))<= x.radius)
 		{
             SCORE++;
@@ -537,30 +540,31 @@ void MainWindow::DetectSlicing(POINT mousepos)
             //if mouse is to left of these new particles add 1px velo to right and vice versa
 			//maybe give a bit of force from the center of tmp
             srand(mousepos.x + mousepos.y);
+
             if (mousepos.x < b1.coordinate.x)
-                b1.dx = tmp.dx + rand() %5;
-            else b1.dx = tmp.dx *-1 - rand() % 5;
+                b1.dx = 3 *  tmp.dx + rand() %5 ;
+            else b1.dx = 3 * tmp.dx *-1 - rand() % 5;
             if (mousepos.y < b1.coordinate.y)
                 b1.dy = tmp.dy * 0.9 + rand() % 5;
             else b1.dy = -1*tmp.dy * 0.9 - rand() % 5;
 
             if (mousepos.x < b2.coordinate.x)
-                b2.dx = tmp.dx + rand() % 5;
-            else b2.dx = tmp.dx * -1 - rand() % 5;
+                b2.dx = 3/2*tmp.dx + rand() % 5;
+            else b2.dx = 3/2*tmp.dx * -1 - rand() % 5;
             if (mousepos.y < b2.coordinate.y)
                 b2.dy = tmp.dy * 0.9 + rand() % 5;
             else b2.dy = -1 * tmp.dy * 0.9 - rand() % 5;
 
             if (mousepos.x < b3.coordinate.x)
-                b3.dx = tmp.dx + rand() % 5;
-            else b3.dx = tmp.dx * -1 - rand() % 5;
+                b3.dx = 3/2*tmp.dx + rand() % 5;
+            else b3.dx = 3/2*tmp.dx * -1 - rand() % 5;
             if (mousepos.y < b3.coordinate.y)
                 b3.dy = tmp.dy * 0.9 + rand() % 5;
             else b3.dy = -1 * tmp.dy * 0.9 - rand() % 5;
 
             if (mousepos.x < b4.coordinate.x)
-                b4.dx = tmp.dx + rand() % 5;
-            else b4.dx = tmp.dx * -1 - rand() % 5;
+                b4.dx = 3/2*tmp.dx + rand() % 5;
+            else b4.dx = 3/2*tmp.dx * -1 - rand() % 5;
             if (mousepos.y < b4.coordinate.y)
                 b4.dy = tmp.dy * 0.9 + rand() % 5;
             else b4.dy = -1 * tmp.dy * 0.9 - rand() % 5;
