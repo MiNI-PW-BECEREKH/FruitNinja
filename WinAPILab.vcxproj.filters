@@ -30,9 +30,6 @@
     <ClInclude Include="Arithmetics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GemWindow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Ball.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -42,9 +39,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GemWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

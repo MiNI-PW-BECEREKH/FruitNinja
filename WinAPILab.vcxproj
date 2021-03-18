@@ -143,13 +143,11 @@
     <ClInclude Include="Arithmetics.h" />
     <ClInclude Include="Ball.h" />
     <ClInclude Include="BaseWindow.h" />
-    <ClInclude Include="GemWindow.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
-    <ClCompile Include="GemWindow.cpp" />
     <ClCompile Include="MainWindow.cpp" />
   </ItemGroup>
   <ItemGroup>

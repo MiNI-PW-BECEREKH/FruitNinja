@@ -6,7 +6,7 @@
 
 
 #include "Ball.h"
-#include "GemWindow.h"
+
 
 #define MAX_GEM_COUNT_Y 12
 #define MAX_GEM_COUNT_X 16
@@ -30,7 +30,7 @@ public:
 	HCURSOR hCursorSword;
 
 	
-	GemWindow Gems[MAX_GEM_COUNT_X][MAX_GEM_COUNT_Y];
+
 
 	/**
 	 * Singletons should not be clone able.

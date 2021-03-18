@@ -70,9 +70,10 @@ BOOL MainWindow::CreateBoard()
                     //App::GetInstance().Gems[i][j].SetColor(RGB(0, 0, 0));
                    //HBRUSH hOldBrush = (HBRUSH)SetClassLongPtr(App::GetInstance().Gems[i][j].Window(), GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
                     HBRUSH hOldBrush = (HBRUSH)SetClassLongPtr(Window(), GCLP_HBRBACKGROUND, (LONG_PTR)hbrush);
-                    SelectObject(hdc, hbrush);
+                    HBRUSH oldbrush = (HBRUSH)SelectObject(hdc, hbrush);
                     Rectangle(hdc, i * 50, j * 50, i * 50 + 50, j * 50 + 50);
-                    DeleteObject(hOldBrush);
+                    SelectObject(hdc, oldbrush);
+                    DeleteObject(hbrush);
                     //InvalidateRect(App::GetInstance().Gems[i][j].Window(), NULL, TRUE);
                     ReleaseDC(Window(), hdc);
             	}
@@ -243,7 +244,7 @@ void MainWindow::RandomBallSpawn()
     tmpball.color = RGB(R, G, B);
 	//if(tmpball.region != NULL)
 	Balls.push_back(tmpball);
-
+    
 }
 
 
@@ -259,6 +260,7 @@ void MainWindow::UpdateBalls()
     HBITMAP memBitmap = CreateCompatibleBitmap(pDC, rc.right - rc.left, rc.bottom - rc.top);//TODO:fix
     SelectObject(memDC, memBitmap);
     FillRect(memDC, &rc, (HBRUSH)WHITE_BRUSH);
+    //Drawing background
     for (unsigned int i = 0; i < cGem.cx; i++)
     {
         for (unsigned int j = 0; j < cGem.cy; j++)
@@ -319,14 +321,16 @@ void MainWindow::UpdateBalls()
         x.coordinate.x += x.dx/2;
         x.coordinate.y += x.dy/2;
 		
-
+        
         //Draws once
-        SelectObject(memDC, GetStockObject(DC_BRUSH));
+        HBRUSH oldbrush =  (HBRUSH)SelectObject(memDC, GetStockObject(DC_BRUSH));
         SetDCBrushColor(memDC, x.color);
         SelectObject(memDC, GetStockObject(DC_PEN));
         SetDCPenColor(memDC, x.color);
         
         Ellipse(memDC, x.coordinate.x, x.coordinate.y, x.coordinate.x + x.radius, x.coordinate.y + x.radius);
+        SelectObject(memDC, oldbrush);
+
 
 	}
     if(!DRAW_KNIFE_TRACE)
@@ -488,7 +492,7 @@ void MainWindow::DrawProgressBar(HDC *memDC,HDC *pDC)
     if(PROGRESS_COUNTER == 599)
         //neglect adding points just so close to end;
         DRAW_KNIFE_TRACE = FALSE;
-
+	
     if (PROGRESS_COUNTER == 600)
     {
         DRAW_END_SCREEN = TRUE;
@@ -519,10 +523,10 @@ void MainWindow::DetectSlicing(POINT mousepos)
 	if(DRAW_KNIFE_TRACE)
         AddToMousePolygon(mousepos);
 
-    FLOAT mouseVelocityX = mousePolygon[6].x - mousePolygon[0].x;
-    FLOAT mouseVelocityY = mousePolygon[6].y - mousePolygon[0].y;;
+    FLOAT mouseDistanceX = mousePolygon[6].x - mousePolygon[0].x;
+    FLOAT mouseDistanceY = mousePolygon[6].y - mousePolygon[0].y;
 
-	if(BALL_COLLISION && (mouseVelocityX != 0 || mouseVelocityY != 0))
+	if(BALL_COLLISION && (mouseDistanceX != 0 || mouseDistanceY != 0))
 	for(auto& x: Balls)
 	{
         
@@ -553,34 +557,37 @@ void MainWindow::DetectSlicing(POINT mousepos)
             //if mouse is to left of these new particles add 1px velo to right and vice versa
 			//maybe give a bit of force from the center of tmp
             srand(mousepos.x + mousepos.y);
+            //FLOAT mouseVelocity = mouseVelocityY/mouseVelocityX;
+            //FLOAT angle = atan2(mouseVelocityY, mouseVelocityY) * (180 / (22/7));
 
             if (mousepos.x < b1.coordinate.x)
-                b1.dx = 3 *  tmp.dx + rand() %5 ;
-            else b1.dx = 3 * tmp.dx *-1 - rand() % 5;
+                b1.dx =  tmp.dx + rand() %5 ;
+            else b1.dx =  tmp.dx *-1 - rand() % 5;
             if (mousepos.y < b1.coordinate.y)
                 b1.dy = tmp.dy * 0.9 + rand() % 5;
-            else b1.dy = -1*tmp.dy * 0.9 - rand() % 5;
+            else b1.dy = tmp.dy * 0.9 - rand() % 5;
 
             if (mousepos.x < b2.coordinate.x)
-                b2.dx = 3/2*tmp.dx + rand() % 5;
-            else b2.dx = 3/2*tmp.dx * -1 - rand() % 5;
+                b2.dx = 3*tmp.dx + rand() % 5;
+            else b2.dx = 3*tmp.dx * -1 - rand() % 5;
             if (mousepos.y < b2.coordinate.y)
                 b2.dy = tmp.dy * 0.9 + rand() % 5;
             else b2.dy = -1 * tmp.dy * 0.9 - rand() % 5;
 
             if (mousepos.x < b3.coordinate.x)
-                b3.dx = 3/2*tmp.dx + rand() % 5;
-            else b3.dx = 3/2*tmp.dx * -1 - rand() % 5;
+                b3.dx = 3*tmp.dx + rand() % 5;
+            else b3.dx = 3*tmp.dx * -1 - rand() % 5;
             if (mousepos.y < b3.coordinate.y)
                 b3.dy = tmp.dy * 0.9 + rand() % 5;
             else b3.dy = -1 * tmp.dy * 0.9 - rand() % 5;
 
             if (mousepos.x < b4.coordinate.x)
-                b4.dx = 3/2*tmp.dx + rand() % 5;
-            else b4.dx = 3/2*tmp.dx * -1 - rand() % 5;
+                b4.dx = 3*tmp.dx + rand() % 5;
+            else b4.dx = 3*tmp.dx * -1 - rand() % 5;
             if (mousepos.y < b4.coordinate.y)
                 b4.dy = tmp.dy * 0.9 + rand() % 5;
             else b4.dy = -1 * tmp.dy * 0.9 - rand() % 5;
+
 
 			
             //if(tmp.radius/2 >= 4)
