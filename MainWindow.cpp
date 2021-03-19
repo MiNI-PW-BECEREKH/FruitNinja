@@ -170,8 +170,8 @@ void MainWindow::OnBoardSizeSmall()
     SIZE s; s.cx = 8 * 50; s.cy = 6 * 50 + 20;//last 10 for bar 
     SetClientSize(s);
     AdjustWindow();
-    ClearBoard();
-    CreateBoard();
+    //ClearBoard();
+    //CreateBoard();
     InvalidateRect(Window(), NULL, TRUE);
     //backgroundColor = RGB(42, 69, 31);
     CheckItem(ID_BOARD_SMALL, GetMenu(this->Window()));
@@ -190,8 +190,8 @@ void MainWindow::OnBoardSizeMedium()
     SIZE s; s.cx = 12 * 50; s.cy = 10 * 50+20;
     SetClientSize(s);
     AdjustWindow();
-    ClearBoard();
-    CreateBoard();
+    //ClearBoard();
+    //CreateBoard();
     InvalidateRect(Window(), NULL, TRUE);
     //backgroundColor = RGB(42, 69, 31);
     
@@ -211,8 +211,8 @@ void MainWindow::OnBoardSizeBig()
     SIZE s; s.cx = 16 * 50; s.cy = 12 * 50+20;
     SetClientSize(s);
     AdjustWindow();
-    ClearBoard();
-    CreateBoard();
+    //ClearBoard();
+    //CreateBoard();
     InvalidateRect(Window(), NULL, TRUE);
     //backgroundColor = RGB(42, 69, 31);
 
@@ -374,7 +374,7 @@ void MainWindow::UpdateBalls()
     DeleteObject(font);
     //ClearProgressBar();
     DrawProgressBar(&memDC,&pDC);
-    if(TIME_UP )
+    if(TIME_UP)
     {
         DRAW_END_SCREEN = FALSE;
         HDC memDC2 = CreateCompatibleDC(memDC);
@@ -561,6 +561,20 @@ void MainWindow::DetectSlicing(POINT mousepos)
             srand(mousepos.x + mousepos.y);
             //FLOAT mouseVelocity = mouseVelocityY/mouseVelocityX;
             //FLOAT angle = atan2(mouseVelocityY, mouseVelocityY) * (180 / (22/7));
+
+            ////improve bottom more
+            //FLOAT mouseDistanceX = mousePolygon[6].x - mousePolygon[3].x;
+            //FLOAT mouseDistanceY = mousePolygon[6].y - mousePolygon[3].y;
+            //FLOAT mouseVelocityX = mouseDistanceX / (3 * 50);
+            //FLOAT mouseVelocityY = mouseDistanceY / (3 * 50);
+            //b1.dx = 10* mouseVelocityX + rand() % (INT)(mouseDistanceX + 1);
+            //b1.dy = mouseVelocityY;
+            //b2.dx = 10 * mouseVelocityX + rand() % (INT)(mouseDistanceX + 1);
+            //b2.dy = mouseVelocityY;
+            //b3.dx = 10 * mouseVelocityX + rand() % (INT)(mouseDistanceX + 1);
+            //b3.dy = mouseVelocityY;
+            //b4.dx = 10 * mouseVelocityX + rand() % (INT)(mouseDistanceX + 1);
+            //b4.dy = mouseVelocityY;
 
             if (mousepos.x < b1.coordinate.x)
                 b1.dx = 3* tmp.dx + rand() %5 ;
