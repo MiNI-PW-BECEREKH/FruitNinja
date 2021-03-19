@@ -371,7 +371,7 @@ void MainWindow::UpdateBalls()
     SetBkMode(memDC, TRANSPARENT);
 	
     DrawText(memDC, convertUINT2LPCWSTR(SCORE).c_str(), convertUINT2LPCWSTR(SCORE).size(), &rc, DT_RIGHT | DT_TOP);
-
+    DeleteObject(font);
     //ClearProgressBar();
     DrawProgressBar(&memDC,&pDC);
     if(TIME_UP )
@@ -383,10 +383,11 @@ void MainWindow::UpdateBalls()
         //SetDCBrushColor(memDC2, RGB(77, 255, 77));
 
 
-        SelectObject(memDC2, GetStockObject(DC_BRUSH));
+        HBRUSH oldbrush = (HBRUSH)SelectObject(memDC2, GetStockObject(DC_BRUSH));
         SetDCBrushColor(memDC2, RGB(0, 255, 0));
         if (!Rectangle(memDC2, rc.left, rc.top, rc.right, rc.bottom))
             OutputDebugString(L"Coloring Failed");
+        SelectObject(memDC2, oldbrush);
 
     	
         BLENDFUNCTION blnfn;
@@ -402,9 +403,9 @@ void MainWindow::UpdateBalls()
         SetTextColor(memDC, RGB(255, 255, 255));
         HFONT font = CreateFont(40, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
             CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, NULL);
-        SelectObject(memDC, font);
+        HFONT oldfont = (HFONT)SelectObject(memDC, font);
         SetBkMode(memDC, TRANSPARENT);
-
+        SelectObject(memDC, oldfont);
         std::ostringstream ss;
         ss << "SCORE:" << std::endl
             << SCORE;
@@ -414,12 +415,13 @@ void MainWindow::UpdateBalls()
         modifiedrc.top = rc.top + rc.bottom / 2 - 50;
 
         DrawText(memDC, s2ws(s).c_str(), s2ws(s).size(), &modifiedrc, DT_CENTER | DT_TOP);
-
+        DeleteObject(font);
     	
 
         BitBlt(pDC, 0, 0, MeasureSize(Window()).cx, MeasureSize(Window()).cx, memDC, 0, 0, SRCCOPY);
 
         DeleteObject(membitmap2);
+        DeleteDC(memDC2);
         DeleteDC(memDC);
 
     }
@@ -561,8 +563,8 @@ void MainWindow::DetectSlicing(POINT mousepos)
             //FLOAT angle = atan2(mouseVelocityY, mouseVelocityY) * (180 / (22/7));
 
             if (mousepos.x < b1.coordinate.x)
-                b1.dx =  tmp.dx + rand() %5 ;
-            else b1.dx =  tmp.dx *-1 - rand() % 5;
+                b1.dx = 3* tmp.dx + rand() %5 ;
+            else b1.dx = 3* tmp.dx *-1 - rand() % 5;
             if (mousepos.y < b1.coordinate.y)
                 b1.dy = tmp.dy * 0.9 + rand() % 5;
             else b1.dy = tmp.dy * 0.9 - rand() % 5;
