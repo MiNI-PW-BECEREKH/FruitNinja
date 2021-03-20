@@ -170,7 +170,7 @@ void MainWindow::OnBoardSizeSmall()
     SIZE s; s.cx = 8 * 50; s.cy = 6 * 50 + 20;//last 10 for bar 
     SetClientSize(s);
     AdjustWindow();
-    //ClearBoard();
+    ClearBoard();
     //CreateBoard();
     InvalidateRect(Window(), NULL, TRUE);
     //backgroundColor = RGB(42, 69, 31);
@@ -190,7 +190,7 @@ void MainWindow::OnBoardSizeMedium()
     SIZE s; s.cx = 12 * 50; s.cy = 10 * 50+20;
     SetClientSize(s);
     AdjustWindow();
-    //ClearBoard();
+    ClearBoard();
     //CreateBoard();
     InvalidateRect(Window(), NULL, TRUE);
     //backgroundColor = RGB(42, 69, 31);
@@ -211,7 +211,7 @@ void MainWindow::OnBoardSizeBig()
     SIZE s; s.cx = 16 * 50; s.cy = 12 * 50+20;
     SetClientSize(s);
     AdjustWindow();
-    //ClearBoard();
+    ClearBoard();
     //CreateBoard();
     InvalidateRect(Window(), NULL, TRUE);
     //backgroundColor = RGB(42, 69, 31);
